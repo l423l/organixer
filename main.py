@@ -15,17 +15,17 @@ class OrganixerApp:
     def _build_layout(self):
         bot = ttk.Frame(self.root, padding = 10)
         bot.pack(side="bottom", fill="x")
-        # Buttons part of the code,
+        # Buttons part of the Body,
         self.select_folder_button = tk.Button(bot, text="Select Folder", command=self.select_folder)
         self.select_folder_button.pack(side=tk.LEFT, padx=5)
         self.organize_button = tk.Button(bot, text="Organize", command=self.organize_files)
         self.organize_button.pack(side=tk.LEFT, padx=5)
         self.up_button = tk.Button(bot, text="Up", command=self.one_level_up)
         self.up_button.pack(side=tk.LEFT, padx=5)
-        # Label part of the code,
+        # Label part of the Body,
         self.selected_folder_label = tk.Label(bot, text="No folder selected", background="lightgray")
         self.selected_folder_label.pack(side=tk.LEFT, padx=5)
-        #Treeview part of the code,
+        #Treeview part of the Body,
         self.treeview()
 
     def treeview(self):
@@ -50,7 +50,9 @@ class OrganixerApp:
             if os.path.isdir(full_path):
                 item_type, size = "File Folder", ""
             else:
+                # File type and size formatting
                 item_type, size = f"{os.path.splitext(filename)[1][1:].upper()} File", self.size_format(os.path.getsize(full_path))
+                # Insert into treeview and tuple the values for date modified, type, and size
             self.tree.insert("", "end", text=filename, values=(self.date_format(os.path.getmtime(full_path)), item_type, size))
 
     def date_format(self, timestamp):
@@ -70,8 +72,7 @@ class OrganixerApp:
             self.target_folder = parent_folder
             self.selected_folder_label.config(text=f"Selected folder: {parent_folder}")
             self.show_tree()
-        
-
+    
     def on_two_left_click(self, event):
         item_id = self.tree.focus()
         if not item_id:

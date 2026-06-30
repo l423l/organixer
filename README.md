@@ -15,7 +15,7 @@ A desktop GUI tool that organizes a folder's files into category subfolders (scr
 Clone the repository from [GitHub](https://github.com/l423l/organixer.git), then run:
 
 \```bash
-git clone https://github.com/l423l/organixer.git
+git clone <https://github.com/l423l/organixer.git>
 cd organixer
 python main.py
 \```

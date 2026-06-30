@@ -1,28 +1,15 @@
+from datetime import datetime
 import tkinter as tk
 from tkinter import ttk, filedialog
+from categories import CATEGORY_MAP
 import os
 import shutil
-
-CATEGORY_MAP = {
-    ".py": "scripts",
-    ".js": "scripts",
-    ".html": "scripts", ".css": "scripts",
-    ".sql": "scripts",
-    ".php": "scripts",
-    ".pdf": "docs", ".doc": "docs",
-    ".md": "docs",
-    ".txt": "docs",
-    ".png": "assets", ".jpg": "assets",
-    ".zip": "archives",
-}
 
 class OrganixerApp:
     def __init__(self, root):
         self.root = root
         root.title("Organixer")
         root.minsize(900, 560)
-
-        
         self._build_layout()
 
     def _build_layout(self):
@@ -33,6 +20,8 @@ class OrganixerApp:
         self.select_folder_button.pack(side=tk.LEFT, padx=5)
         self.organize_button = tk.Button(bot, text="Organize", command=self.organize_files)
         self.organize_button.pack(side=tk.LEFT, padx=5)
+        self.up_button = tk.Button(bot, text="Up", command=self.one_level_up)
+        self.up_button.pack(side=tk.LEFT, padx=5)
         # Label part of the code,
         self.selected_folder_label = tk.Label(bot, text="No folder selected", background="lightgray")
         self.selected_folder_label.pack(side=tk.LEFT, padx=5)
@@ -42,12 +31,16 @@ class OrganixerApp:
     def treeview(self):
         self.tree = ttk.Treeview(self.root)
         self.tree.pack(fill="both", expand=True)
-        self.tree.heading("#0", text="Files and Folders", anchor="w")
-        self.tree_columns = ["Name", "Type", "Size"]
+        
+        self.tree.heading("#0", text="Name", anchor="w")
+        self.tree_columns = ["Date Modified", "Type", "Size"]
         self.tree["columns"] = self.tree_columns
+
         for col in self.tree["columns"]:
             self.tree.heading(col, text=col.title(), anchor="w")
             self.tree.column(col, anchor="w")
+    
+        self.tree.bind("<Double-Button-1>", self.on_two_left_click)
 
     def show_tree(self):
         for item in self.tree.get_children():
@@ -55,28 +48,50 @@ class OrganixerApp:
         for filename in os.listdir(self.target_folder):
             full_path = os.path.join(self.target_folder, filename)
             if os.path.isdir(full_path):
-                item_type, size = "Folder", ""
+                item_type, size = "File Folder", ""
             else:
-                item_type, size = "File", f"{os.path.getsize(full_path)} bytes"
-            self.tree.insert("", "end", text=filename, values=(filename, item_type, size))
+                item_type, size = f"{os.path.splitext(filename)[1][1:].upper()} File", f"{os.path.getsize(full_path)} bytes"
+            self.tree.insert("", "end", text=filename, values=(datetime.fromtimestamp(os.path.getmtime(full_path)), item_type, size))
+    
+    def one_level_up(self):
+        if not hasattr(self, 'target_folder'):
+            return
+        parent_folder = os.path.dirname(self.target_folder)
+        if parent_folder and os.path.exists(parent_folder):
+            self.target_folder = parent_folder
+            self.selected_folder_label.config(text=f"Selected folder: {parent_folder}")
+            self.show_tree()
+        
 
-
+    def on_two_left_click(self, event):
+        item_id = self.tree.focus()
+        if not item_id:
+            return
+        
+        filename = self.tree.item(item_id, "text")
+        full_path = os.path.join(self.target_folder, filename)
+        if os.path.isdir(full_path):
+            self.target_folder = full_path
+            self.selected_folder_label.config(text=f"Selected folder: {full_path}")
+            self.show_tree()
+        
     def select_folder(self):
         folder = filedialog.askdirectory(title="Select folder to organize")
         if not folder:
             return
         self.target_folder = folder
+        self.root_folder = folder
         self.selected_folder_label.config(text=f"Selected folder: {folder}")
         self.show_tree()  
 
     def organize_files(self):
-        for filename in os.listdir(self.select_folder):
-            full_path = os.path.join(self.select_folder, filename)
+        for filename in os.listdir(self.root_folder):
+            full_path = os.path.join(self.root_folder, filename)
             if os.path.isdir(full_path):
                 continue
             ext = os.path.splitext(filename)[1]
             category = CATEGORY_MAP.get(ext, "misc")
-            category_path = os.path.join(self.target_folder, category)
+            category_path = os.path.join(self.root_folder, category)
             os.makedirs(category_path, exist_ok=True)
             shutil.move(full_path, os.path.join(category_path, filename))
         self.show_tree()

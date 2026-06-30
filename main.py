@@ -50,11 +50,20 @@ class OrganixerApp:
             if os.path.isdir(full_path):
                 item_type, size = "File Folder", ""
             else:
-                item_type, size = f"{os.path.splitext(filename)[1][1:].upper()} File", f"{os.path.getsize(full_path)} bytes"
-            self.tree.insert("", "end", text=filename, values=(datetime.fromtimestamp(os.path.getmtime(full_path)), item_type, size))
-    
+                item_type, size = f"{os.path.splitext(filename)[1][1:].upper()} File", self.size_format(os.path.getsize(full_path))
+            self.tree.insert("", "end", text=filename, values=(self.date_format(os.path.getmtime(full_path)), item_type, size))
+
+    def date_format(self, timestamp):
+        return datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S")
+
+    def size_format(self, size):
+        for unit in ['bytes', 'KB', 'MB', 'GB', 'TB']:
+            if size < 1024.0:
+                return f"{size:.2f} {unit}"
+            size /= 1024.0
+
     def one_level_up(self):
-        if not hasattr(self, 'target_folder'):
+        if self.target_folder == self.root_folder:
             return
         parent_folder = os.path.dirname(self.target_folder)
         if parent_folder and os.path.exists(parent_folder):
